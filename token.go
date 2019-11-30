@@ -4,9 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/marcosxzhang/kit"
 	"strconv"
 	"strings"
 	"time"
@@ -55,7 +55,7 @@ func New(opts ...Option) (*Token, error) {
 
 	// header
 	var header string
-	if bs, err := kit.JsonEncoding(token.Header); err != nil {
+	if bs, err := json.Marshal(token.Header); err != nil {
 		return nil, err
 	} else {
 		header = base64.StdEncoding.EncodeToString(bs)
@@ -63,7 +63,7 @@ func New(opts ...Option) (*Token, error) {
 
 	// payload
 	var payload string
-	if bs, err := kit.JsonEncoding(token.Payload); err != nil {
+	if bs, err := json.Marshal(token.Payload); err != nil {
 		return nil, err
 	} else {
 		payload = base64.StdEncoding.EncodeToString(bs)
@@ -71,8 +71,8 @@ func New(opts ...Option) (*Token, error) {
 
 	// join header and payload for '.', then do secret, get the jwt signature
 	hps := fmt.Sprintf("%s.%s", header, payload)
-	hc := hmac.New(sha256.New, kit.StringToBytes(token.secret))
-	if _, err := hc.Write(kit.StringToBytes(hps)); err != nil {
+	hc := hmac.New(sha256.New, []byte(token.secret))
+	if _, err := hc.Write([]byte(hps)); err != nil {
 		return nil, err
 	} else {
 		token.Sign = base64.StdEncoding.EncodeToString(hc.Sum(nil))
@@ -158,7 +158,7 @@ func defaultCheck(token, secret string) (*Token, error) {
 	headerItem, payloadItem, signItem := item[0], item[1], item[2]
 	hps := fmt.Sprintf("%s.%s", headerItem, payloadItem)
 	hc := hmac.New(sha256.New, []byte(secret))
-	if _, err := hc.Write(kit.StringToBytes(hps)); err != nil {
+	if _, err := hc.Write([]byte(hps)); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func defaultCheck(token, secret string) (*Token, error) {
 	if hb, err := base64.StdEncoding.DecodeString(headerItem); err != nil {
 		return nil, err
 	} else {
-		if err := kit.JsonDecoding(hb, &h); err != nil {
+		if err := json.Unmarshal(hb, &h); err != nil {
 			return nil, err
 		}
 	}
@@ -182,7 +182,7 @@ func defaultCheck(token, secret string) (*Token, error) {
 	if pb, err := base64.StdEncoding.DecodeString(payloadItem); err != nil {
 		return nil, err
 	} else {
-		if err := kit.JsonDecoding(pb, &p); err != nil {
+		if err := json.Unmarshal(pb, &p); err != nil {
 			return nil, err
 		}
 	}
