@@ -1,5 +1,11 @@
 package jwt
 
+import (
+	"encoding/base64"
+	"encoding/json"
+	"time"
+)
+
 // jwt第二部分:payload
 // 载荷就是存放有效信息的地方。这个名字像是特指飞机上承载的货品，这些有效信息包含三个部分
 // .标准中注册的声明
@@ -36,11 +42,11 @@ type Payload struct {
 	// 接收jwt的一方
 	Aud string `json:"aud"`
 	// jwt的过期时间，这个过期时间必须要大于签发时间(秒)
-	Exp int64 `json:"exp"`
+	Exp time.Duration `json:"exp"`
 	// 定义在什么时间之前，该jwt都是不可用的(秒)
-	Nbf int64 `json:"nbf"`
+	Nbf time.Time `json:"nbf"`
 	// jwt的签发时间(秒)
-	Iat int64 `json:"iat"`
+	Iat time.Time `json:"iat"`
 	// jwt的唯一身份标识，主要用来作为一次性token,从而回避重放攻击
 	Jti string `json:"jti"`
 	// 内部声明
@@ -49,10 +55,22 @@ type Payload struct {
 	External map[string]string `json:"external"`
 }
 
-func (p *Payload) GetInternal(k string) string {
-	return p.Internal[k]
+func (p *Payload) String() string {
+	pbs, _ := json.Marshal(p)
+	return string(pbs)
 }
 
-func (p *Payload) GetExternal(k string) string {
-	return p.External[k]
+func PayloadEncode(payload *Payload) string {
+	pbs, _ := json.Marshal(payload)
+	return base64.StdEncoding.EncodeToString(pbs)
+}
+
+func PayloadDecode(payload string) (*Payload, error) {
+	pbs, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return nil, err
+	}
+	var p Payload
+	err = json.Unmarshal(pbs, &p)
+	return &p, err
 }

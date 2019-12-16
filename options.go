@@ -1,6 +1,16 @@
 package jwt
 
+import (
+	"time"
+)
+
 type Option func(*Token)
+
+func WithAlg(alg Alg) Option {
+	return func(o *Token) {
+		o.Alg = alg
+	}
+}
 
 func WithSecret(secret string) Option {
 	return func(o *Token) {
@@ -26,13 +36,13 @@ func WithAud(aud string) Option {
 	}
 }
 
-func WithExp(exp int64) Option {
+func WithExp(exp time.Duration) Option {
 	return func(o *Token) {
 		o.Exp = exp
 	}
 }
 
-func WithNbf(nbf int64) Option {
+func WithNbf(nbf time.Time) Option {
 	return func(o *Token) {
 		o.Nbf = nbf
 	}
@@ -58,6 +68,6 @@ func WithExternal(k, v string) Option {
 
 func WithCheckFunc(handle CheckFunc) Option {
 	return func(o *Token) {
-		check = handle
+		o.check = handle
 	}
 }

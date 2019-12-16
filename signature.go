@@ -1,5 +1,12 @@
 package jwt
 
+import (
+	"crypto"
+	"crypto/hmac"
+	"encoding/base64"
+	"fmt"
+)
+
 // jwt第三部分:signature
 // jwt的第三部分是一个签证信息，这个签证信息由三部分组成：
 // .1:header (base64)
@@ -11,4 +18,19 @@ package jwt
 type Signature struct {
 	// 签证
 	Sign string `json:"sign"`
+}
+
+func (s *Signature) String() string {
+	return s.Sign
+}
+
+func DoSignature(header string, payload string, hash crypto.Hash, secret string) (*Signature, error) {
+	// join header and payload for '.', then do secret, get the jwt signature
+	hps := fmt.Sprintf("%s.%s", header, payload)
+	hc := hmac.New(hash.New, []byte(secret))
+	if _, err := hc.Write([]byte(hps)); err != nil {
+		return nil, err
+	} else {
+		return &Signature{Sign: base64.StdEncoding.EncodeToString(hc.Sum(nil))}, nil
+	}
 }
